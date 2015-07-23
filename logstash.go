@@ -40,12 +40,16 @@ func NewLogstashAdapter(route *router.Route) (router.LogAdapter, error) {
 // Stream implements the router.LogAdapter interface.
 func (a *LogstashAdapter) Stream(logstream chan *router.Message) {
 	for m := range logstream {
+		var dat map[string]interface{}
 		msg := LogstashMessage{
 			Message:  m.Data,
 			Name:     m.Container.Name,
 			ID:       m.Container.ID,
 			Image:    m.Container.Config.Image,
 			Hostname: m.Container.Config.Hostname,
+		}
+		if err := json.Unmarshal([]byte(m.Data), &dat); err == nil {
+			msg.Data = dat
 		}
 		js, err := json.Marshal(msg)
 		if err != nil {
@@ -67,4 +71,5 @@ type LogstashMessage struct {
 	ID       string `json:"docker.id"`
 	Image    string `json:"docker.image"`
 	Hostname string `json:"docker.hostname"`
+	Data     interface{}
 }
